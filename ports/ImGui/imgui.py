@@ -108,6 +108,11 @@ def process_args(ports):
     return args
 
 
+def linker_setup(ports, settings):
+    if opts['renderer'] == 'wgpu':
+        settings.USE_WEBGPU = 1
+
+
 def handle_options(options, error_handler):
     for option, value in options.items():
         value = value.lower()

@@ -30,14 +30,12 @@ static void MainLoopForEmscripten(void *iUserData)
   auto renderFrame = reinterpret_cast<render_frame_function_t *>(iUserData);
   if(std::invoke(*renderFrame))
   {
-    printf("MainLoopForEmscripten done\n");
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
     glfwTerminate();
     emscripten_cancel_main_loop();
-    printf("MainLoopForEmscripten cancelled\n");
   }
 }
 
@@ -176,8 +174,6 @@ int main(int, char **)
   };
 
   emscripten_set_main_loop_arg(MainLoopForEmscripten, &renderFrame, 0, true);
-
-  printf("after emscripten_set_main_loop_arg\n");
 
   return 0;
 }
