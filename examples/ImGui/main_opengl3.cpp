@@ -23,20 +23,24 @@
 #include <emscripten.h>
 #include <functional>
 
-using render_frame_function_t = std::function<bool()>;
+struct App
+{
+  GLFWwindow *window{};
+  std::function<void()> renderFrame{};
+  std::function<void()> cleanup{};
+};
 
 static void MainLoopForEmscripten(void *iUserData)
 {
-  auto renderFrame = reinterpret_cast<render_frame_function_t *>(iUserData);
-  if(std::invoke(*renderFrame))
+  auto app =  reinterpret_cast<App *>(iUserData);
+  if(glfwWindowShouldClose(app->window))
   {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwTerminate();
+    if(app->cleanup)
+      app->cleanup();
     emscripten_cancel_main_loop();
   }
+  else
+    app->renderFrame();
 }
 
 static void glfw_error_callback(int error, const char *description)
@@ -97,8 +101,9 @@ int main(int, char **)
   // no filesystem access with emscripten
   io.IniFilename = nullptr;
 
-  render_frame_function_t renderFrame = [&]() {
-    bool exit = false;
+  App app{};
+  app.window = window;
+  app.renderFrame = [&]() {
     // Poll and handle events (inputs, window resize, etc.)
     // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
     // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
@@ -143,7 +148,7 @@ int main(int, char **)
       ImGui::Text("counter = %d", counter);
 
       if(ImGui::Button("Exit"))
-        exit = true;
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
 
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
       ImGui::End();
@@ -169,11 +174,18 @@ int main(int, char **)
                  clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    return exit;
   };
 
-  emscripten_set_main_loop_arg(MainLoopForEmscripten, &renderFrame, 0, true);
+  app.cleanup = [window]() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+  };
+
+  emscripten_set_main_loop_arg(MainLoopForEmscripten, &app, 0, true);
 
   return 0;
 }
