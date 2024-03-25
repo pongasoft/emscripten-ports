@@ -63,22 +63,19 @@ static void wgpu_error_callback(WGPUErrorType error_type, const char *message, v
 
 struct App
 {
-  GLFWwindow *window{};
-  std::function<void()> renderFrame{};
+  std::function<bool()> renderFrame{};
   std::function<void()> cleanup{};
 };
 
 static void MainLoopForEmscripten(void *iUserData)
 {
-  auto app =  reinterpret_cast<App *>(iUserData);
-  if(glfwWindowShouldClose(app->window))
+  auto app = reinterpret_cast<App *>(iUserData);
+  if(app->renderFrame())
   {
     if(app->cleanup)
       app->cleanup();
     emscripten_cancel_main_loop();
   }
-  else
-    app->renderFrame();
 }
 
 // Main code
@@ -140,7 +137,6 @@ int main(int, char **)
 
   // Main loop
   App app{};
-  app.window = window;
   app.renderFrame = [&]() {
     // Poll and handle events (inputs, window resize, etc.)
     // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -241,6 +237,7 @@ int main(int, char **)
     WGPUCommandBuffer cmd_buffer = wgpuCommandEncoderFinish(encoder, &cmd_buffer_desc);
     WGPUQueue queue = wgpuDeviceGetQueue(wgpu_device);
     wgpuQueueSubmit(queue, 1, &cmd_buffer);
+    return glfwWindowShouldClose(window);
   };
 
   app.cleanup = [window]() {
