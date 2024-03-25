@@ -15,7 +15,8 @@
 # @author Yan Pujante
 
 import os
-from typing import Union, Dict
+from typing import Union, Dict, Optional
+from tools import utils
 
 TAG = '1.90.4'
 
@@ -34,19 +35,21 @@ DESCRIPTION = f'Dear ImGui ({TAG}): Bloat-free Graphical User interface for C++ 
 LICENSE = 'MIT License'
 
 OPTIONS = {
-    'renderer': 'Which renderer to use: opengl3 (default) or wgpu',
+    'renderer': 'Which renderer to use: opengl3 or wgpu (required)',
+    'backend': 'Which backend to use: glfw or sdl2 (required)',
     'branch': 'Which branch to use: master (default) or docking',
     'disableDemo': 'A boolean to disable ImGui demo (enabled by default)'
 }
 
 # user options (from --use-port)
-opts: Dict[str, Union[str, bool]] = {
-    'renderer': 'opengl3',
+opts: Dict[str, Union[Optional[str], bool]] = {
+    'renderer': None,
+    'backend': None,
     'branch': 'master',
     'disableDemo': False
 }
 
-deps = ['contrib.glfw3']
+deps = []
 
 
 def get_tag():
@@ -59,12 +62,14 @@ def get_zip_url():
 
 
 def get_lib_name(settings):
-    return (f'lib_{name}_{get_tag()}-{opts["renderer"]}' +
+    return (f'lib_{name}_{get_tag()}-{opts["backend"]}-{opts["renderer"]}' +
             ('-nd' if opts['disableDemo'] else '') +
             '.a')
 
 
 def get(ports, settings, shared):
+    if opts['backend'] is None or opts['renderer'] is None:
+        utils.exit_with_error(f'imgui port requires both backend and renderer options to be defined')
 
     ports.fetch_project(name, get_zip_url(),  sha512hash=DISTRIBUTIONS[opts['branch']]['hash'])
 
@@ -78,13 +83,17 @@ def get(ports, settings, shared):
         srcs = ['imgui.cpp', 'imgui_draw.cpp', 'imgui_tables.cpp', 'imgui_widgets.cpp']
         if not opts['disableDemo']:
             srcs.append('imgui_demo.cpp')
-        srcs.append(os.path.join('backends', 'imgui_impl_glfw.cpp'))  # always include glfw backend
+        srcs.append(os.path.join('backends', f'imgui_impl_{opts["backend"]}.cpp'))
         srcs.append(os.path.join('backends', f'imgui_impl_{opts["renderer"]}.cpp'))
 
         source_include_paths = [os.path.join(source_path, 'backends')]
 
-        # making sure that this port is using the proper GLFW includes (not the one built-in)
-        flags = ['--use-port=contrib.glfw3']
+        flags = []
+        if opts['backend'] == 'glfw':
+            # making sure that this port is using the proper GLFW includes (not the one built-in)
+            flags.append('--use-port=contrib.glfw3')
+        else:
+            flags.append('--use-port=sdl2')
 
         ports.build_port(source_path, final, name, includes=source_include_paths, srcs=srcs, flags=flags)
 
@@ -121,6 +130,15 @@ def handle_options(options, error_handler):
                 opts[option] = value
             else:
                 error_handler(f'[renderer] can be either [opengl3] or [wgpu], got [{value}]')
+        elif option == 'backend':
+            if value in {'glfw', 'sdl2'}:
+                opts[option] = value
+            else:
+                error_handler(f'[backend] can be either [glfw] or [sdl2], got [{value}]')
+            if value == 'glfw':
+                deps.append('contrib.glfw3')
+            else:
+                deps.append('sdl2')
         elif option == 'branch':
             if value in DISTRIBUTIONS:
                 opts[option] = value
@@ -131,5 +149,8 @@ def handle_options(options, error_handler):
                 opts[option] = value == 'true'
             else:
                 error_handler(f'{option} is expecting a boolean, got {value}')
-
+    if opts['backend'] is None or opts['renderer'] is None:
+        error_handler(f'both backend and renderer options must be defined')
+    if opts['backend'] == 'sdl2' and opts['renderer'] != 'opengl3':
+        error_handler(f'backend [sdl2] only supports [opengl3] renderer at this time')
 
