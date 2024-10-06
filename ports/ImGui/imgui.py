@@ -16,16 +16,16 @@
 
 import os
 from typing import Union, Dict, Optional
-from tools import utils
 
-TAG = '1.90.4'
+TAG = '1.91.3'
 
+# Run this file as a script to see which command to run to generate the checksums
 DISTRIBUTIONS = {
     'master': {
-        'hash': '45d128b05af579d58762d992280c373130d817545b4b63c8afc43575b18f45e8e989cf988aeca50df2536a110f2427b29c07b02264a2521f1b1731b2c916f16d'
+        'hash': '9dadec54791ec155dd60190f38365dbae114787092ce4f66484fbe152a329699de642d659a3a04d5a8af14b3aeb2b23549a3581a970be2c923a630e45b2faf4b'
     },
     'docking': {
-        'hash': 'ebb3d0d3e3b80368c56328173e5317fdd4b889474aa728758ae83053b910cc3959181686ec5848db7c83aa21572b3f0de4b5bff5aa55d8f0e107a991fe6572b4'
+        'hash': 'da4c0828e8ef5b8a070e25353a5c09ae375ade15115ab0344b9a68df6a814c6b89e2df5ee3c775b5698aaa87bb97a1f22d7dfa94cfb30cf4bfeed0c9a151b2bc'
     }
 }
 
@@ -35,9 +35,12 @@ DESCRIPTION = f'Dear ImGui ({TAG}): Bloat-free Graphical User interface for C++ 
 LICENSE = 'MIT License'
 
 VALID_OPTION_VALUES = {
-    'renderer': {'opengl3', 'wgpu'},
-    'backend': {'sdl2', 'glfw'},
-    'branch': DISTRIBUTIONS.keys()
+    'renderer': ['opengl3', 'wgpu'],
+    'backend': ['sdl2', 'glfw'],
+    'branch': DISTRIBUTIONS.keys(),
+    'disableDemo': ['true', 'false'],
+    'disableImGuiStdLib': ['true', 'false'],
+    'optimizationLevel': ['0', '1', '2', '3', 'g', 's', 'z']  # all -OX possibilities
 }
 
 # key is backend, value is set of possible renderers
@@ -49,8 +52,10 @@ VALID_RENDERERS = {
 OPTIONS = {
     'renderer': f'Which renderer to use: {VALID_OPTION_VALUES["renderer"]} (required)',
     'backend': f'Which backend to use: {VALID_OPTION_VALUES["backend"]} (required)',
-    'branch': 'Which branch to use: master (default) or docking',
-    'disableDemo': 'A boolean to disable ImGui demo (enabled by default)'
+    'branch': 'Which branch to use: master or docking (default to master)',
+    'disableDemo': 'A boolean to disable ImGui demo (enabled by default)',
+    'disableImGuiStdLib': 'A boolean to disable misc/cpp/imgui_stdlib.cpp (enabled by default)',
+    'optimizationLevel': f'Optimization level: {VALID_OPTION_VALUES["optimizationLevel"]} (default to 2)',
 }
 
 # user options (from --use-port)
@@ -58,10 +63,14 @@ opts: Dict[str, Union[Optional[str], bool]] = {
     'renderer': None,
     'backend': None,
     'branch': 'master',
-    'disableDemo': False
+    'disableDemo': False,
+    'disableImGuiStdLib': False,
+    'optimizationLevel': '2'
 }
 
 deps = []
+
+port_name = 'imgui'
 
 
 def get_tag():
@@ -69,24 +78,26 @@ def get_tag():
 
 
 def get_zip_url():
-    # return f'https://github.com/ocornut/imgui/archive/refs/tags/v{get_tag()}.zip'
-    return f'file:///Volumes/Vault/Downloads/imgui-{get_tag()}.zip'
+    return f'https://github.com/ocornut/imgui/archive/refs/tags/v{get_tag()}.zip'
 
 
 def get_lib_name(settings):
-    return (f'lib_{name}_{get_tag()}-{opts["backend"]}-{opts["renderer"]}' +
+    return (f'lib_{port_name}_{get_tag()}-{opts["backend"]}-{opts["renderer"]}-O{opts["optimizationLevel"]}' +
             ('-nd' if opts['disableDemo'] else '') +
+            ('-nl' if opts['disableImGuiStdLib'] else '') +
             '.a')
 
 
 def get(ports, settings, shared):
+    from tools import utils
+
     if opts['backend'] is None or opts['renderer'] is None:
         utils.exit_with_error(f'imgui port requires both backend and renderer options to be defined')
 
-    ports.fetch_project(name, get_zip_url(), sha512hash=DISTRIBUTIONS[opts['branch']]['hash'])
+    ports.fetch_project(port_name, get_zip_url(), sha512hash=DISTRIBUTIONS[opts['branch']]['hash'])
 
     def create(final):
-        root_path = os.path.join(ports.get_dir(), name, f'imgui-{get_tag()}')
+        root_path = os.path.join(ports.get_dir(), port_name, f'imgui-{get_tag()}')
         source_path = root_path
 
         # this port does not install the headers on purpose (see process_args)
@@ -96,12 +107,15 @@ def get(ports, settings, shared):
         srcs = ['imgui.cpp', 'imgui_draw.cpp', 'imgui_tables.cpp', 'imgui_widgets.cpp']
         if not opts['disableDemo']:
             srcs.append('imgui_demo.cpp')
+        if not opts['disableImGuiStdLib']:
+            srcs.append('misc/cpp/imgui_stdlib.cpp')
         srcs.append(os.path.join('backends', f'imgui_impl_{opts["backend"]}.cpp'))
         srcs.append(os.path.join('backends', f'imgui_impl_{opts["renderer"]}.cpp'))
 
-        flags = [f'--use-port={dep}' for dep in deps]
+        flags = [f'--use-port={value}' for value in deps]
+        flags.append(f'-O{opts["optimizationLevel"]}')
 
-        ports.build_port(source_path, final, name, srcs=srcs, flags=flags)
+        ports.build_port(source_path, final, port_name, srcs=srcs, flags=flags)
 
     lib = shared.cache.get_lib(get_lib_name(settings), create, what='port')
     if os.path.getmtime(lib) < os.path.getmtime(__file__):
@@ -116,7 +130,7 @@ def clear(ports, settings, shared):
 
 def process_args(ports):
     # makes the imgui files accessible directly (ex: #include <imgui.h>)
-    args = ['-I', os.path.join(ports.get_dir(), name, f'imgui-{get_tag()}')]
+    args = ['-I', os.path.join(ports.get_dir(), port_name, f'imgui-{get_tag()}')]
     if opts['branch'] == 'docking':
         args += ['-DIMGUI_ENABLE_DOCKING=1']
     if opts['disableDemo']:
@@ -132,6 +146,8 @@ def linker_setup(ports, settings):
 def check_option(option, value, error_handler):
     if value not in VALID_OPTION_VALUES[option]:
         error_handler(f'[{option}] can be {list(VALID_OPTION_VALUES[option])}, got [{value}]')
+    if isinstance(opts[option], bool):
+        value = value == 'true'
     return value
 
 
@@ -146,13 +162,8 @@ def handle_options(options, error_handler):
         value = value.lower()
         if option == 'renderer' or option == 'backend':
             opts[option] = check_required_option(option, value, error_handler)
-        elif option == 'branch':
+        else:
             opts[option] = check_option(option, value, error_handler)
-        elif option == 'disableDemo':
-            if value in {'true', 'false'}:
-                opts[option] = value == 'true'
-            else:
-                error_handler(f'{option} is expecting a boolean, got {value}')
 
     if opts['backend'] is None or opts['renderer'] is None:
         error_handler(f'both backend and renderer options must be defined')
@@ -161,7 +172,14 @@ def handle_options(options, error_handler):
         error_handler(f'backend [{opts["backend"]}] does not support [{opts["renderer"]}] renderer')
 
     if opts['backend'] == 'glfw':
-        deps.append('contrib.glfw3:disableMultiWindow=true')
+        deps.append(f"contrib.glfw3:optimizationLevel={opts['optimizationLevel']}")
     else:
         deps.append('sdl2')
 
+if __name__ == "__main__":
+    print(f'''# To compute checksums run this
+# master    
+curl -sfL https://github.com/ocornut/imgui/archive/refs/tags/v{TAG}.zip | shasum -a 512
+# docking    
+curl -sfL https://github.com/ocornut/imgui/archive/refs/tags/v{TAG}-docking.zip | shasum -a 512
+''')

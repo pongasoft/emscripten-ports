@@ -14,6 +14,7 @@
 #include <SDL.h>
 #include <functional>
 #include <emscripten/emscripten.h>
+#include <emscripten/version.h>
 
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
@@ -49,6 +50,13 @@ int main(int, char **)
     printf("Error: %s\n", SDL_GetError());
     return -1;
   }
+
+  SDL_version compiled;
+  SDL_VERSION(&compiled);
+
+  printf("Emscripten: %d.%d.%d\n", __EMSCRIPTEN_major__, __EMSCRIPTEN_minor__, __EMSCRIPTEN_tiny__);
+  printf("SDL: %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch);
+  printf("ImGui: %s\n", IMGUI_VERSION);
 
   // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -94,7 +102,7 @@ int main(int, char **)
 
   SDL_GLContext gl_context = SDL_GL_CreateContext(window);
   SDL_GL_MakeCurrent(window, gl_context);
-  SDL_GL_SetSwapInterval(1); // Enable vsync
+//  SDL_GL_SetSwapInterval(1); // Enable vsync
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();

@@ -19,7 +19,7 @@
 
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include <GLFW/emscripten_glfw3.h>
-#include <emscripten/emscripten.h>
+#include <emscripten/version.h>
 #include <emscripten.h>
 #include <functional>
 
@@ -52,7 +52,9 @@ int main(int, char **)
   if(!glfwInit())
     return 1;
 
-  printf("%s\n", glfwGetVersionString());
+  printf("Emscripten: %d.%d.%d\n", __EMSCRIPTEN_major__, __EMSCRIPTEN_minor__, __EMSCRIPTEN_tiny__);
+  printf("GLFW: %s\n", glfwGetVersionString());
+  printf("ImGui: %s\n", IMGUI_VERSION);
 
   // Decide GL+GLSL versions
   // GL ES 2.0 + GLSL 100

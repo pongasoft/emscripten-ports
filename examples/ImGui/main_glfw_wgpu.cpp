@@ -11,6 +11,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_wgpu.h>
 #include <stdio.h>
+#include <emscripten/version.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <emscripten/html5_webgpu.h>
@@ -84,6 +85,10 @@ int main(int, char **)
   glfwSetErrorCallback(glfw_error_callback);
   if(!glfwInit())
     return 1;
+
+  printf("Emscripten: %d.%d.%d\n", __EMSCRIPTEN_major__, __EMSCRIPTEN_minor__, __EMSCRIPTEN_tiny__);
+  printf("GLFW: %s\n", glfwGetVersionString());
+  printf("ImGui: %s\n", IMGUI_VERSION);
 
   // Make sure GLFW does not initialize any graphics context.
   // This needs to be done explicitly later.
