@@ -1,5 +1,7 @@
 ### Introduction
 
+![Emscripten Build](https://github.com/pongasoft/emscripten-ports/actions/workflows/main.yml/badge.svg)
+
 Since [Emscripten](https://emscripten.org/) 3.1.54, ports can be external.
 This project is meant to collect ports that are not part of Emscripten.
 I wrote a blog post about this topic [here](https://www.pongasoft.com/blog/yan/webassembly/2024/02/19/the-power-of-emscripten-ports).
