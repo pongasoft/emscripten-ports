@@ -1,0 +1,44 @@
+name: Emscripten Build
+
+on:
+  push:
+    branches:
+      - 'master'
+    tags-ignore:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: emscripten-ports
+
+      - name: Checkout emscripten
+        uses: actions/checkout@v4
+        with:
+          repository: emscripten-core/emsdk
+          path: emscripten
+
+      - name: Install Emscripten
+        working-directory: ${{github.workspace}}/emscripten
+        run: |
+          ./emsdk install latest
+          ./emsdk activate latest
+          source ./emsdk_env.sh
+          emcc -v
+
+      - name: Compile | ImGui
+        working-directory: ${{github.workspace}}/emscripten-ports/examples/ImGui
+        run: |
+          source ${{github.workspace}}/emscripten/emsdk_env.sh
+          emcc --version
+          mkdir build-glfw-opengl3
+          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3 main_glfw_opengl3.cpp -o build-glfw-opengl3
+          mkdir build-glfw-wgpu
+          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu main_glfw_wgpu.cpp -o build-glfw-wgpu
+          mkdir build-sdl2-opengl3
+          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3 main_sdl2_opengl3.cpp -o build-sdl2-opengl3
