@@ -166,7 +166,7 @@ int main(int, char **)
     ImGui::NewFrame();
 
 #ifdef IMGUI_ENABLE_DOCKING
-    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
 #endif
 
 #ifndef IMGUI_DISABLE_DEMO

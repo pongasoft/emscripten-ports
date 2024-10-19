@@ -15,15 +15,15 @@
 import os
 from typing import Union, Dict, Optional
 
-TAG = '1.91.3'
+TAG = '1.91.4'
 
 # Run this file as a script to see which command to run to generate the checksums
 DISTRIBUTIONS = {
     'master': {
-        'hash': '9dadec54791ec155dd60190f38365dbae114787092ce4f66484fbe152a329699de642d659a3a04d5a8af14b3aeb2b23549a3581a970be2c923a630e45b2faf4b'
+        'hash': '3bed4e2f4ac1e1fe078a9783746fb3da3aad936338315b69fbb3871e15af98683d47b43653e483e9c46562b852a646feea10aa9f5af2518d08e7bde1f10c8fa0'
     },
     'docking': {
-        'hash': 'da4c0828e8ef5b8a070e25353a5c09ae375ade15115ab0344b9a68df6a814c6b89e2df5ee3c775b5698aaa87bb97a1f22d7dfa94cfb30cf4bfeed0c9a151b2bc'
+        'hash': '7ad365c944c0c30c8e8ebdee5303c359fd2724354e7d7f5dcccb7a57fc1bd3166ef5a5fdca4618626e6201628783531369997a4b7c1731c9e090b5b2226695a0'
     }
 }
 
