@@ -42,15 +42,8 @@ jobs:
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
           mkdir build-sdl2-opengl3
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3 main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
-
-      - name: Compile | ImGui (docking branch)
-        working-directory: ${{github.workspace}}/emscripten-ports/examples/ImGui
-        run: |
-          source ${{github.workspace}}/emscripten/emsdk_env.sh
-          emcc --version
-          mkdir build-glfw-opengl3
+          
+          # Testing the docking branch
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3:branch=docking main_glfw_opengl3.cpp -o build-glfw-opengl3/index.html
-          mkdir build-glfw-wgpu
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu:branch=docking main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
-          mkdir build-sdl2-opengl3
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3:branch=docking main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
