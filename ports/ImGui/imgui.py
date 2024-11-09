@@ -112,6 +112,7 @@ def get(ports, settings, shared):
 
         flags = [f'--use-port={value}' for value in deps]
         flags.append(f'-O{opts["optimizationLevel"]}')
+        flags.append('-Wno-nontrivial-memaccess')
 
         ports.build_port(source_path, final, port_name, srcs=srcs, flags=flags)
 
