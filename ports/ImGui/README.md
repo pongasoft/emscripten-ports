@@ -28,4 +28,5 @@ emcc --use-port=imgui.py:backend=XXX:renderer=YYY ...
 * `branch`: Which branch to use: `master` or `docking` (default to `master`)
 * `disableDemo`: A boolean to disable ImGui demo (enabled by default)
 * `disableImGuiStdLib`: A boolean to disable `misc/cpp/imgui_stdlib.cpp` (enabled by default)
+* `disableDefaultFont`: A boolean to disable the default font (enabled by default)
 * `optimizationLevel`: Optimization level: ['0', '1', '2', '3', 'g', 's', 'z'] (default to 2)

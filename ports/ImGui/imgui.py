@@ -15,15 +15,15 @@
 import os
 from typing import Union, Dict, Optional
 
-TAG = '1.91.5'
+TAG = '1.91.6'
 
 # Run this file as a script to see which command to run to generate the checksums
 DISTRIBUTIONS = {
     'master': {
-        'hash': '9c95e60752607f9b4e8d98b5d05360008de69131b54e951c898142ede52b355c6423c750afd3d411ce383e59f33560408f63ed59d5c2d75beaf4a2158711d9fa'
+        'hash': 'fec826969ed401a2a24ab829c697004d957c5f955406595d46ffbc9bf36383f3cdf222108a562194f8efcf49c2d3f36f32ebafdaf5d17f840462018f19f5a105'
     },
     'docking': {
-        'hash': 'd11e7119ac8e2c65e56c0616e0a58d857bdc95ca8b34e99bdf97e2b3e8d8490ac4c9b9e532eb9e3f8716825b441fce17c39f79ef9e9f9fe45021c81443a4efc3'
+        'hash': '30e49460fc83650a50c5421f441e42b090a3529370cacb33b202a5ef2827510c4dadd12b26bf1c361f31237446ca72fca66111c8cb705838acee24916a367f3d'
     }
 }
 
@@ -38,6 +38,7 @@ VALID_OPTION_VALUES = {
     'branch': DISTRIBUTIONS.keys(),
     'disableDemo': ['true', 'false'],
     'disableImGuiStdLib': ['true', 'false'],
+    'disableDefaultFont': ['true', 'false'],
     'optimizationLevel': ['0', '1', '2', '3', 'g', 's', 'z']  # all -OX possibilities
 }
 
@@ -53,6 +54,7 @@ OPTIONS = {
     'branch': 'Which branch to use: master or docking (default to master)',
     'disableDemo': 'A boolean to disable ImGui demo (enabled by default)',
     'disableImGuiStdLib': 'A boolean to disable misc/cpp/imgui_stdlib.cpp (enabled by default)',
+    'disableDefaultFont': 'A boolean to disable the default font (enabled by default)',
     'optimizationLevel': f'Optimization level: {VALID_OPTION_VALUES["optimizationLevel"]} (default to 2)',
 }
 
@@ -63,6 +65,7 @@ opts: Dict[str, Union[Optional[str], bool]] = {
     'branch': 'master',
     'disableDemo': False,
     'disableImGuiStdLib': False,
+    'disableDefaultFont': False,
     'optimizationLevel': '2'
 }
 
@@ -83,6 +86,7 @@ def get_lib_name(settings):
     return (f'lib_{port_name}_{get_tag()}-{opts["backend"]}-{opts["renderer"]}-O{opts["optimizationLevel"]}' +
             ('-nd' if opts['disableDemo'] else '') +
             ('-nl' if opts['disableImGuiStdLib'] else '') +
+            ('-nf' if opts['disableDefaultFont'] else '') +
             '.a')
 
 
@@ -113,6 +117,9 @@ def get(ports, settings, shared):
         flags = [f'--use-port={value}' for value in deps]
         flags.append(f'-O{opts["optimizationLevel"]}')
         flags.append('-Wno-nontrivial-memaccess')
+
+        if opts['disableDefaultFont']:
+            flags.append('-DIMGUI_DISABLE_DEFAULT_FONT')
 
         ports.build_port(source_path, final, port_name, srcs=srcs, flags=flags)
 
