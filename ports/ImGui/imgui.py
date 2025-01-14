@@ -15,15 +15,15 @@
 import os
 from typing import Union, Dict, Optional
 
-TAG = '1.91.6'
+TAG = '1.91.7'
 
 # Run this file as a script to see which command to run to generate the checksums
 DISTRIBUTIONS = {
     'master': {
-        'hash': 'fec826969ed401a2a24ab829c697004d957c5f955406595d46ffbc9bf36383f3cdf222108a562194f8efcf49c2d3f36f32ebafdaf5d17f840462018f19f5a105'
+        'hash': '5f03af9124786740dfee3eea0f058894996368e49c78409115699b96c60fac6a62e4adb83547b15e88dd0f7f76e840d703fcadfc9b156d53247b10635dfb3bd8'
     },
     'docking': {
-        'hash': '30e49460fc83650a50c5421f441e42b090a3529370cacb33b202a5ef2827510c4dadd12b26bf1c361f31237446ca72fca66111c8cb705838acee24916a367f3d'
+        'hash': '2e92f5b229c8800d3d1282be9d738beb1a1f4320a78cf1cff20d9ea451e892cd4b6a007990721977059fc179bc722606561956ca74dbdf8a9d43e227e50f6ed0'
     }
 }
 
@@ -147,6 +147,9 @@ def process_args(ports):
 def linker_setup(ports, settings):
     if opts['renderer'] == 'wgpu':
         settings.USE_WEBGPU = 1
+    if opts['backend'] == 'glfw':
+        settings.MIN_WEBGL_VERSION = 2
+        settings.MAX_WEBGL_VERSION = 2
 
 
 def check_option(option, value, error_handler):
