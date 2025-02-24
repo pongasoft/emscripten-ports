@@ -181,7 +181,11 @@ def handle_options(options, error_handler):
         error_handler(f'backend [{opts["backend"]}] does not support [{opts["renderer"]}] renderer')
 
     if opts['backend'] == 'glfw':
-        deps.append(f"contrib.glfw3:optimizationLevel={opts['optimizationLevel']}")
+        glfw3_options = {'optimizationLevel': opts['optimizationLevel']}
+        if opts['renderer'] == 'wgpu':
+          glfw3_options['disableWebGL2'] = 'true'
+        glfw3_options = ':'.join(f"{key}={value}" for key, value in glfw3_options.items())
+        deps.append(f"contrib.glfw3:{glfw3_options}")
     else:
         deps.append('sdl2')
 
