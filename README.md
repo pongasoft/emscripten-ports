@@ -36,6 +36,13 @@ I wrote a blog post about this topic [here](https://www.pongasoft.com/blog/yan/w
     <th>Examples</th>
   </tr>
   <tr>
+    <td><a href="https://dawn.googlesource.com/dawn">Dawn</a></td>
+    <td>v20250430.214924</td>
+    <td><a href="ports/Dawn"><code>dawn.py</code></a></td>
+    <td>An open-source and cross-platform implementation of the WebGPU standard</td>
+    <td><a href="examples/Dawn">Example</a></td>
+  </tr>
+  <tr>
     <td><a href="https://github.com/ocornut/imgui">Dear ImGui</a></td>
     <td>1.91.9b</td>
     <td><a href="ports/ImGui"><code>imgui.py</code></a></td>

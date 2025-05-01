@@ -47,3 +47,15 @@ jobs:
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3:branch=docking main_glfw_opengl3.cpp -o build-glfw-opengl3/index.html
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu:branch=docking main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
           emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3:branch=docking main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
+
+      - name: Compile | Dawn
+        working-directory: ${{github.workspace}}/emscripten-ports/examples/Dawn
+        run: |
+          source ${{github.workspace}}/emscripten/emsdk_env.sh
+          emcc --version
+          mkdir build-dawn
+          emcc -sASYNCIFY=1 --use-port=${{github.workspace}}/emscripten-ports/ports/Dawn/dawn.py main.cpp -o build-dawn/index.html
+          ls -la build-dawn
+          mkdir build-dawn-O2
+          emcc -sASYNCIFY=1 --closure=1 -O2 --use-port=${{github.workspace}}/emscripten-ports/ports/Dawn/dawn.py main.cpp -o build-dawn-O2/index.html
+          ls -la build-dawn-O2
