@@ -15,9 +15,8 @@
 import os
 from typing import Union, Dict, Optional
 
-TAG = 'v20250428.160623'
-HASH = '2f2a2af84bb8d889a6d28e93224f02df9e29a188efd6069a93fa5bf8dac7c44e4259cb17d8ca501016fc8fa94ae81a39c50746f308aeafc0fe5b1e27f77ab104'
-ZIP_URL = f'https://github.com/google/dawn/releases/download/{TAG}/emdawnwebgpu_pkg-{TAG}.zip'
+TAG = 'v20250430.214924'
+HASH = '543675d341e29c65cd401655f7f7cf0de1ef818fe21738a6bd83b1e68e07482230a92996bd0131c3a618c12e2fe27415d96ba62ee6865c3fdc9da755dbfb9baa'
 
 # contrib port information (required)
 URL = 'https://dawn.googlesource.com/dawn'
@@ -30,12 +29,16 @@ VALID_OPTION_VALUES = {
 }
 
 OPTIONS = {
+  'tag': f'The tag/version for the version of Dawn you want to use (default to {TAG})',
+  'hash': 'The 512 shasum of the artifact downloaded (ok to omit if you do not care)',
   'enableCPPBindings': 'A boolean to disable CPP bindings (enabled by default)',
   'optimizationLevel': f'Optimization level: {VALID_OPTION_VALUES["optimizationLevel"]} (default to 2)',
 }
 
 # user options (from --use-port)
 opts: Dict[str, Union[Optional[str], bool]] = {
+  'tag': TAG,
+  'hash': HASH,
   'enableCPPBindings': True,
   'optimizationLevel': '2'
 }
@@ -43,8 +46,11 @@ opts: Dict[str, Union[Optional[str], bool]] = {
 port_name = 'dawn'
 
 
+def get_zip_url():
+  return f'https://github.com/google/dawn/releases/download/{opts["tag"]}/emdawnwebgpu_pkg-{opts["tag"]}.zip'
+
 def get_lib_name(settings):
-  return f'lib_{port_name}_{TAG}-O{opts["optimizationLevel"]}.a'
+  return f'lib_{port_name}_{opts["tag"]}-O{opts["optimizationLevel"]}.a'
 
 
 def get_root_path(ports):
@@ -65,7 +71,7 @@ def get_source_path(ports):
 
 def get(ports, settings, shared):
   # get the port
-  ports.fetch_project(port_name, ZIP_URL, sha512hash=HASH)
+  ports.fetch_project(port_name, get_zip_url(), sha512hash=opts['hash'])
 
   def create(final):
     source_path = get_source_path(ports)
@@ -117,7 +123,7 @@ def process_args(ports):
 
 
 def check_option(option, value, error_handler):
-  if value not in VALID_OPTION_VALUES[option]:
+  if option in VALID_OPTION_VALUES and value not in VALID_OPTION_VALUES[option]:
     error_handler(f'[{option}] can be {list(VALID_OPTION_VALUES[option])}, got [{value}]')
   if isinstance(opts[option], bool):
     value = value == 'true'
@@ -134,9 +140,11 @@ def handle_options(options, error_handler):
   for option, value in options.items():
     value = value.lower()
     opts[option] = check_option(option, value, error_handler)
-
+  if 'tag' in options and 'hash' not in options:
+    opts['hash'] = None
+    print(f'Warning: no hash provided for tag {opts["tag"]}. Consider running "curl -sfL {get_zip_url()} | shasum -a 512" and provide the result as an option.')
 
 if __name__ == "__main__":
   print(f'''# To compute checksums run this
-curl -sfL {ZIP_URL} | shasum -a 512
+curl -sfL https://github.com/google/dawn/releases/download/{TAG}/emdawnwebgpu_pkg-{TAG}.zip | shasum -a 512
 ''')
