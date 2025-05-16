@@ -15,13 +15,13 @@
 import os
 from typing import Union, Dict, Optional
 
-TAG = 'v20250430.214924'
-HASH = '543675d341e29c65cd401655f7f7cf0de1ef818fe21738a6bd83b1e68e07482230a92996bd0131c3a618c12e2fe27415d96ba62ee6865c3fdc9da755dbfb9baa'
+TAG = 'v20250514.194204'
+HASH = '6aedbaa6a19fe91fc36b1e2cb6ca369cf6a29a3c8213c39f3b3930bd36bb7186665301f090ad91e9a99ba5999c9f6d32404ef37fd0fbb7c017ea3d9151cd22ad'
 
 # contrib port information (required)
 URL = 'https://dawn.googlesource.com/dawn'
 DESCRIPTION = 'Dawn is an open-source and cross-platform implementation of the WebGPU standard'
-LICENSE = 'BSD 3-Clause License'
+LICENSE = 'Some files: BSD 3-Clause License. Other files: Emscripten\'s license (available under both MIT License and University of Illinois/NCSA Open Source License)'
 
 VALID_OPTION_VALUES = {
   'enableCPPBindings': ['true', 'false'],
