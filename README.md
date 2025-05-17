@@ -37,7 +37,7 @@ I wrote a blog post about this topic [here](https://www.pongasoft.com/blog/yan/w
   </tr>
   <tr>
     <td><a href="https://dawn.googlesource.com/dawn">Dawn</a></td>
-    <td>v20250430.214924</td>
+    <td>v20250516.124039</td>
     <td><a href="ports/Dawn"><code>dawn.py</code></a></td>
     <td>An open-source and cross-platform implementation of the WebGPU standard</td>
     <td><a href="examples/Dawn">Example</a></td>
