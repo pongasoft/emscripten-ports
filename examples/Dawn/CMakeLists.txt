@@ -9,8 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(${target} "main.cpp")
 
-set(PORTS_OPTIMIZATION_LEVEL "$<IF:$<CONFIG:Debug>,g,2>")
-set(port_options "--use-port=${PROJECT_SOURCE_DIR}/../../ports/Dawn/dawn.py:optimizationLevel=${PORTS_OPTIMIZATION_LEVEL}")
+set(port_options "--use-port=emdawnwebgpu")
 
 target_compile_options(${target} PRIVATE
     "-fno-exceptions"
