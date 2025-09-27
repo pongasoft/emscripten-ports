@@ -66,7 +66,9 @@ std::unique_ptr<GPU> GPU::create()
 {
   printf("Initializing...\n");
   wgpu::InstanceDescriptor instanceDescriptor;
-  instanceDescriptor.capabilities.timedWaitAnyEnable = true;
+  static constexpr auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
+  instanceDescriptor.requiredFeatureCount = 1;
+  instanceDescriptor.requiredFeatures = &kTimedWaitAny;
   std::unique_ptr<GPU> instance = std::make_unique<GPU>(wgpu::CreateInstance(&instanceDescriptor));
   if(!instance->fInstance)
     terminate("Cannot create instance");
@@ -151,7 +153,7 @@ void Renderer::init(GPU &iGPU)
 {
   wgpu::ShaderModule shaderModule{};
   {
-    wgpu::ShaderModuleWGSLDescriptor wgslDesc{};
+    wgpu::ShaderSourceWGSL wgslDesc{};
     wgslDesc.code = shaderCode;
 
     wgpu::ShaderModuleDescriptor descriptor{};
