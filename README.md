@@ -37,7 +37,7 @@ I wrote a blog post about this topic [here](https://www.pongasoft.com/blog/yan/w
   </tr>
   <tr>
     <td><a href="https://github.com/ocornut/imgui">Dear ImGui</a></td>
-    <td>1.92.3</td>
+    <td>1.92.4</td>
     <td><a href="ports/ImGui"><code>imgui.py</code></a></td>
     <td>Bloat-free Graphical User interface for C++ with minimal dependencies</td>
     <td><a href="examples/ImGui">Examples (GLFW + OpenGL3 / GLFW + WebGPU / SDL2 + OpenGL3)</a></td>
