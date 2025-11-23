@@ -19,8 +19,11 @@ emcc --shell-file shell.html --use-port=../../ports/ImGui/imgui.py:backend=glfw:
 ```sh
 # create a build folder
 mkdir /tmp/imgui
-emcc --shell-file shell.html --use-port=../../ports/ImGui/imgui.py:backend=glfw:renderer=wgpu main_glfw_wgpu.cpp -o /tmp/imgui/index.html
+emcc -s ASYNCIFY=1 --shell-file shell.html --use-port=../../ports/ImGui/imgui.py:backend=glfw:renderer=wgpu main_glfw_wgpu.cpp -o /tmp/imgui/index.html
 ```
+
+> [!WARNING]
+> This example requires the `-s ASYNCIFY=1` option.
 
 #### SDL2 + OpenGL3
 ```sh
