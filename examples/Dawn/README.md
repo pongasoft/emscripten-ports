@@ -9,13 +9,13 @@ To build the example, do the following:
 ```sh
 # create a build folder
 mkdir /tmp/dawn
-emcc -sASYNCIFY=1 --use-port=../../ports/Dawn/dawn.py main.cpp -o /tmp/dawn/index.html
+emcc --use-port=emdawnwebgpu main.cpp -o /tmp/dawn/index.html
 ```
 
 > [!TIP]
 > ```sh
 > # when using optimizations, you can add --closure=1 for a smaller code
-> emcc -sASYNCIFY=1 --closure=1 -O2 --use-port=../../ports/Dawn/dawn.py main.cpp -o /tmp/dawn/index.html
+> emcc --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o /tmp/dawn/index.html
 > ```
 
 ### Running

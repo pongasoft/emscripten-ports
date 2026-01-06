@@ -36,8 +36,6 @@ target_link_options(${target} PRIVATE
 
 target_link_options(${target} PRIVATE
     "-fno-exceptions"
-    "-sASYNCIFY=1"
-    "-sASYNCIFY_STACK_SIZE=65536"
 
     "$<$<CONFIG:Release>:-flto>"
     "$<$<CONFIG:Debug>:-sSAFE_HEAP=1>"

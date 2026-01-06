@@ -54,8 +54,8 @@ jobs:
           source ${{github.workspace}}/emscripten/emsdk_env.sh
           emcc --version
           mkdir build-dawn
-          emcc -sASYNCIFY=1 --use-port=emdawnwebgpu main.cpp -o build-dawn/index.html
+          emcc --use-port=emdawnwebgpu main.cpp -o build-dawn/index.html
           ls -la build-dawn
           mkdir build-dawn-O2
-          emcc -sASYNCIFY=1 --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o build-dawn-O2/index.html
+          emcc --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o build-dawn-O2/index.html
           ls -la build-dawn-O2

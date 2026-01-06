@@ -16,8 +16,8 @@
 // and heavily modified for this example
 
 #include <webgpu/webgpu_cpp.h>
-#include <emscripten.h>
 #include <emscripten/html5.h>
+#include <functional>
 
 const uint32_t kWidth = 300;
 const uint32_t kHeight = 150;
@@ -33,19 +33,22 @@ class GPU
 public:
   explicit GPU(wgpu::Instance iInstance) : fInstance{std::move(iInstance)} {}
 
-  static std::unique_ptr<GPU> create();
-
-  inline wgpu::WaitStatus wait(wgpu::Future f) const { return fInstance.WaitAny(f, UINT64_MAX); }
+  static void asyncCreate(std::function<void(std::shared_ptr<GPU> iGPU)> onCreated,
+                          std::function<void(wgpu::StringView)> const &onError);
 
   wgpu::Instance &instance() { return fInstance; }
   wgpu::Device &device() { return fDevice; }
   wgpu::Queue &queue() { return fQueue; }
 
+  void pollEvents() const { fInstance.ProcessEvents(); }
+
 private:
-  void initDevice();
+  void asyncInitDevice(std::function<void()> const &onDeviceInitialized,
+                       std::function<void(wgpu::StringView)> const &onError);
 
 private:
   wgpu::Instance fInstance{};
+  wgpu::Adapter fAdapter{};
   wgpu::Device fDevice{};
   wgpu::Queue fQueue{};
 };
@@ -53,87 +56,86 @@ private:
 class Renderer
 {
 public:
-  void init(GPU &iGPU);
-  void render(GPU &iGPU, int iFrame);
+  explicit Renderer(std::shared_ptr<GPU> iGPU) : fGPU{std::move(iGPU)} {}
+  void init();
+  void render(int iFrame);
 
 private:
+
+  std::shared_ptr<GPU> fGPU;
+
   wgpu::RenderPipeline fRenderPipeline{};
   wgpu::Surface fSurface{};
   wgpu::TextureView fCanvasDepthStencilView{};
 };
 
-std::unique_ptr<GPU> GPU::create()
+//------------------------------------------------------------------------
+// GPU::asyncCreate
+//------------------------------------------------------------------------
+void GPU::asyncCreate(std::function<void(std::shared_ptr<GPU> iGPU)> onCreated,
+                      std::function<void(wgpu::StringView)> const &onError)
 {
   printf("Initializing...\n");
-  wgpu::InstanceDescriptor instanceDescriptor;
-  static constexpr auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
-  instanceDescriptor.requiredFeatureCount = 1;
-  instanceDescriptor.requiredFeatures = &kTimedWaitAny;
-  std::unique_ptr<GPU> instance = std::make_unique<GPU>(wgpu::CreateInstance(&instanceDescriptor));
-  if(!instance->fInstance)
-    terminate("Cannot create instance");
-  instance->initDevice();
-  return instance;
+  auto gpu = std::make_shared<GPU>(wgpu::CreateInstance());
+  gpu->asyncInitDevice([gpu, onCreated = std::move(onCreated)] {
+                         onCreated(gpu);
+                       },
+                       onError);
 }
 
-void GPU::initDevice()
+//------------------------------------------------------------------------
+// GPU::asyncInitDevice
+//------------------------------------------------------------------------
+void GPU::asyncInitDevice(std::function<void()> const &onDeviceInitialized,
+                          std::function<void(wgpu::StringView)> const &onError)
 {
-  wgpu::Limits limits;
-  wgpu::DeviceDescriptor deviceDescriptor;
-  deviceDescriptor.requiredLimits = &limits;
-  deviceDescriptor.SetUncapturedErrorCallback(
-    [](const wgpu::Device &, wgpu::ErrorType errorType, wgpu::StringView message) {
-      printf("UncapturedError (errorType=%d): %.*s\n", errorType, (int) message.length, message.data);
-      assert(false);
-    });
-  deviceDescriptor.SetDeviceLostCallback(wgpu::CallbackMode::AllowSpontaneous,
-                                         [](const wgpu::Device &, wgpu::DeviceLostReason reason,
-                                            wgpu::StringView message) {
-                                           printf("DeviceLost (reason=%d): %.*s\n", reason, (int) message.length, message.data);
-                                         });
-
   wgpu::RequestAdapterWebXROptions xrOptions = {};
   wgpu::RequestAdapterOptions options = {};
   options.nextInChain = &xrOptions;
 
-  wgpu::Adapter adapter;
-  wgpu::Future f1 = fInstance.RequestAdapter(&options, wgpu::CallbackMode::WaitAnyOnly,
-                                             [&adapter](wgpu::RequestAdapterStatus status, wgpu::Adapter ad,
-                                                        wgpu::StringView message) {
-                                              if(message.length)
-                                              {
-                                                printf("RequestAdapter: %.*s\n", (int) message.length, message.data);
-                                              }
-                                               if(status == wgpu::RequestAdapterStatus::Unavailable)
-                                               {
-                                                 printf("WebGPU unavailable; exiting cleanly\n");
-                                                 // exit(0) (rather than emscripten_force_exit(0)) ensures there is no dangling keepalive.
-                                                 exit(0);
-                                               }
-                                               assert(status == wgpu::RequestAdapterStatus::Success);
-                                               adapter = std::move(ad);
-                                             });
-  wait(f1);
-  assert(adapter);
+  fInstance.RequestAdapter(&options, wgpu::CallbackMode::AllowSpontaneous,
+                           [this, onDeviceInitialized, onError](wgpu::RequestAdapterStatus status,
+                                                                wgpu::Adapter ad,
+                                                                wgpu::StringView message) {
+                             if(status != wgpu::RequestAdapterStatus::Success)
+                             {
+                               onError(message);
+                               return;
+                             }
+                             fAdapter = std::move(ad);
 
-  wgpu::Device device;
-  wgpu::Future f2 = adapter.RequestDevice(&deviceDescriptor, wgpu::CallbackMode::WaitAnyOnly,
-                                          [&device](wgpu::RequestDeviceStatus status, wgpu::Device dev,
-                                                    wgpu::StringView message) {
-                                            if(message.length)
-                                            {
-                                              printf("RequestDevice: %.*s\n", (int) message.length, message.data);
-                                            }
-                                            assert(status == wgpu::RequestDeviceStatus::Success);
+                             wgpu::Limits limits;
+                             wgpu::DeviceDescriptor deviceDescriptor;
+                             deviceDescriptor.requiredLimits = &limits;
+                             deviceDescriptor.SetUncapturedErrorCallback([](const wgpu::Device &,
+                                                                            wgpu::ErrorType errorType,
+                                                                            wgpu::StringView message) {
+                               printf("UncapturedError (errorType=%d): %.*s\n", errorType, (int) message.length, message.data);
+                               terminate("UncapturedError");
+                             });
+                             deviceDescriptor.SetDeviceLostCallback(wgpu::CallbackMode::AllowProcessEvents,
+                                                                    [](const wgpu::Device &,
+                                                                       wgpu::DeviceLostReason reason,
+                                                                       wgpu::StringView message) {
+                                                                      printf("DeviceLost (reason=%d): %.*s\n", reason, (int) message.length,
+                                                                             message.data);
+                                                                    });
 
-                                            device = std::move(dev);
-                                          });
-  wait(f2);
-  assert(device);
-
-  fDevice = std::move(device);
-
-  fQueue = fDevice.GetQueue();
+                             wgpu::Device device;
+                             fAdapter.RequestDevice(&deviceDescriptor, wgpu::CallbackMode::AllowSpontaneous,
+                                                    [this, onDeviceInitialized, onError](wgpu::RequestDeviceStatus status,
+                                                                                         wgpu::Device dev,
+                                                                                         wgpu::StringView message) {
+                                                      if(status != wgpu::RequestDeviceStatus::Success)
+                                                      {
+                                                        onError(message);
+                                                        return;
+                                                      }
+                                                      fDevice = std::move(dev);
+                                                      fQueue = fDevice.GetQueue();
+                                                      onDeviceInitialized();
+                                                    });
+                           });
 }
 
 static const char shaderCode[] = R"(
@@ -149,7 +151,10 @@ static const char shaderCode[] = R"(
     }
 )";
 
-void Renderer::init(GPU &iGPU)
+//------------------------------------------------------------------------
+// Renderer::init
+//------------------------------------------------------------------------
+void Renderer::init()
 {
   wgpu::ShaderModule shaderModule{};
   {
@@ -158,17 +163,17 @@ void Renderer::init(GPU &iGPU)
 
     wgpu::ShaderModuleDescriptor descriptor{};
     descriptor.nextInChain = &wgslDesc;
-    shaderModule = iGPU.device().CreateShaderModule(&descriptor);
+    shaderModule = fGPU->device().CreateShaderModule(&descriptor);
   }
 
   {
     wgpu::BindGroupLayoutDescriptor bglDesc{};
-    auto bgl = iGPU.device().CreateBindGroupLayout(&bglDesc);
+    auto bgl = fGPU->device().CreateBindGroupLayout(&bglDesc);
     wgpu::BindGroupDescriptor desc{};
     desc.layout = bgl;
     desc.entryCount = 0;
     desc.entries = nullptr;
-    iGPU.device().CreateBindGroup(&desc);
+    fGPU->device().CreateBindGroup(&desc);
   }
 
   {
@@ -191,25 +196,14 @@ void Renderer::init(GPU &iGPU)
     depthStencilState.depthCompare = wgpu::CompareFunction::Always;
 
     wgpu::RenderPipelineDescriptor descriptor{};
-    descriptor.layout = iGPU.device().CreatePipelineLayout(&pl);
+    descriptor.layout = fGPU->device().CreatePipelineLayout(&pl);
     descriptor.vertex.module = shaderModule;
     descriptor.vertex.entryPoint = "main_v";
     descriptor.fragment = &fragmentState;
     descriptor.primitive.topology = wgpu::PrimitiveTopology::TriangleList;
     descriptor.depthStencil = &depthStencilState;
 
-    wgpu::Future f = iGPU.device().CreateRenderPipelineAsync(&descriptor, wgpu::CallbackMode::WaitAnyOnly,
-                                                              [this](wgpu::CreatePipelineAsyncStatus status,
-                                                                     wgpu::RenderPipeline pl, wgpu::StringView message) {
-                                                                if(message.length)
-                                                                {
-                                                                  printf("CreateRenderPipelineAsync: %.*s\n", (int) message.length, message.data);
-                                                                }
-                                                                assert(status == wgpu::CreatePipelineAsyncStatus::Success);
-                                                                fRenderPipeline = std::move(pl);
-                                                              });
-    iGPU.wait(f);
-    assert(fRenderPipeline);
+    fRenderPipeline = fGPU->device().CreateRenderPipeline(&descriptor);
   }
 
   {
@@ -217,7 +211,7 @@ void Renderer::init(GPU &iGPU)
     descriptor.usage = wgpu::TextureUsage::RenderAttachment;
     descriptor.size = {kWidth, kHeight, 1};
     descriptor.format = wgpu::TextureFormat::Depth32Float;
-    fCanvasDepthStencilView = iGPU.device().CreateTexture(&descriptor).CreateView();
+    fCanvasDepthStencilView = fGPU->device().CreateTexture(&descriptor).CreateView();
   }
 
   {
@@ -226,12 +220,12 @@ void Renderer::init(GPU &iGPU)
 
     wgpu::SurfaceDescriptor surfDesc{};
     surfDesc.nextInChain = &canvasDesc;
-    fSurface = iGPU.instance().CreateSurface(&surfDesc);
+    fSurface = fGPU->instance().CreateSurface(&surfDesc);
 
     wgpu::SurfaceColorManagement colorManagement{};
     wgpu::SurfaceConfiguration configuration{};
     configuration.nextInChain = &colorManagement;
-    configuration.device = iGPU.device();
+    configuration.device = fGPU->device();
     configuration.usage = wgpu::TextureUsage::RenderAttachment;
     configuration.format = wgpu::TextureFormat::BGRA8Unorm;
     configuration.width = kWidth;
@@ -243,8 +237,13 @@ void Renderer::init(GPU &iGPU)
 
 }
 
-void Renderer::render(GPU &iGPU, int iFrame)
+//------------------------------------------------------------------------
+// Renderer::render
+//------------------------------------------------------------------------
+void Renderer::render(int iFrame)
 {
+  fGPU->pollEvents();
+
   wgpu::SurfaceTexture surfaceTexture;
   fSurface.GetCurrentTexture(&surfaceTexture);
   assert(surfaceTexture.status == wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal);
@@ -270,7 +269,7 @@ void Renderer::render(GPU &iGPU, int iFrame)
 
   wgpu::CommandBuffer commands;
   {
-    wgpu::CommandEncoder encoder = iGPU.device().CreateCommandEncoder();
+    wgpu::CommandEncoder encoder = fGPU->device().CreateCommandEncoder();
     {
       wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderpass);
       pass.SetPipeline(fRenderPipeline);
@@ -280,26 +279,41 @@ void Renderer::render(GPU &iGPU, int iFrame)
     commands = encoder.Finish();
   }
 
-  iGPU.queue().Submit(1, &commands);
+  fGPU->queue().Submit(1, &commands);
 }
 
+static std::unique_ptr<Renderer> kRenderer{};
+static int kFrameCount = 0;
+
+//------------------------------------------------------------------------
+// MainLoop
+//------------------------------------------------------------------------
+void MainLoop()
+{
+  if(kFrameCount < 60)
+  {
+    kFrameCount++;
+    kRenderer->render(kFrameCount);
+  }
+  else
+  {
+    emscripten_cancel_main_loop();
+    printf("Done \n");
+  }
+}
+
+//------------------------------------------------------------------------
+// main
+//------------------------------------------------------------------------
 int main()
 {
-  auto gpu = GPU::create();
-  
-  auto renderer = std::make_unique<Renderer>();
-
-  renderer->init(*gpu);
-
-  int frameCount = 0;
-
-  while(frameCount < 60)
-  {
-    frameCount++;
-    renderer->render(*gpu, frameCount);
-    emscripten_sleep(16);
-  }
-
-  printf("Done \n");
+  GPU::asyncCreate([](auto iGPU) {
+                     kRenderer = std::make_unique<Renderer>(std::move(iGPU));
+                     kRenderer->init();
+                     emscripten_set_main_loop(MainLoop, 0, true);
+                   }, [](auto iMessage) {
+                     printf("Error creating the GPU %.*s\n", static_cast<int>(iMessage.length), iMessage.data);
+                     terminate("GPU::asyncCreate");
+                   });
 }
 
