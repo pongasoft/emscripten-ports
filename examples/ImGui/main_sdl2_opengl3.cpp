@@ -54,7 +54,7 @@ int main(int, char **)
   SDL_version compiled;
   SDL_VERSION(&compiled);
 
-  printf("Emscripten: %d.%d.%d\n", __EMSCRIPTEN_major__, __EMSCRIPTEN_minor__, __EMSCRIPTEN_tiny__);
+  printf("Emscripten: %d.%d.%d\n", __EMSCRIPTEN_MAJOR__, __EMSCRIPTEN_MINOR__, __EMSCRIPTEN_TINY__);
   printf("SDL: %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch);
   printf("ImGui: %s\n", IMGUI_VERSION);
 
