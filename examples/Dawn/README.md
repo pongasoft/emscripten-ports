@@ -9,13 +9,13 @@ To build the example, do the following:
 ```sh
 # create a build folder
 mkdir /tmp/dawn
-emcc --use-port=emdawnwebgpu main.cpp -o /tmp/dawn/index.html
+em++ --use-port=emdawnwebgpu main.cpp -o /tmp/dawn/index.html
 ```
 
 > [!TIP]
 > ```sh
 > # when using optimizations, you can add --closure=1 for a smaller code
-> emcc --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o /tmp/dawn/index.html
+> em++ --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o /tmp/dawn/index.html
 > ```
 
 ### Running

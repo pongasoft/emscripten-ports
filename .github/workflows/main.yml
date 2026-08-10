@@ -35,27 +35,27 @@ jobs:
         working-directory: ${{github.workspace}}/emscripten-ports/examples/ImGui
         run: |
           source ${{github.workspace}}/emscripten/emsdk_env.sh
-          emcc --version
+          em++ --version
           mkdir build-glfw-opengl3
-          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3 main_glfw_opengl3.cpp -o build-glfw-opengl3/index.html
+          em++ --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3 main_glfw_opengl3.cpp -o build-glfw-opengl3/index.html
           mkdir build-glfw-wgpu
-          emcc -s ASYNCIFY=1 --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
+          em++ -s ASYNCIFY=1 --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
           mkdir build-sdl2-opengl3
-          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3 main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
+          em++ --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3 main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
           
           # Testing the docking branch
-          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3:branch=docking main_glfw_opengl3.cpp -o build-glfw-opengl3/index.html
-          emcc -s ASYNCIFY=1 --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu:branch=docking main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
-          emcc --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3:branch=docking main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
+          em++ --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=opengl3:branch=docking main_glfw_opengl3.cpp -o build-glfw-opengl3/index.html
+          em++ -s ASYNCIFY=1 --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=glfw:renderer=wgpu:branch=docking main_glfw_wgpu.cpp -o build-glfw-wgpu/index.html
+          em++ --shell-file shell.html --use-port=${{github.workspace}}/emscripten-ports/ports/ImGui/imgui.py:backend=sdl2:renderer=opengl3:branch=docking main_sdl2_opengl3.cpp -o build-sdl2-opengl3/index.html
 
       - name: Compile | Dawn
         working-directory: ${{github.workspace}}/emscripten-ports/examples/Dawn
         run: |
           source ${{github.workspace}}/emscripten/emsdk_env.sh
-          emcc --version
+          em++ --version
           mkdir build-dawn
-          emcc --use-port=emdawnwebgpu main.cpp -o build-dawn/index.html
+          em++ --use-port=emdawnwebgpu main.cpp -o build-dawn/index.html
           ls -la build-dawn
           mkdir build-dawn-O2
-          emcc --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o build-dawn-O2/index.html
+          em++ --closure=1 -O2 --use-port=emdawnwebgpu main.cpp -o build-dawn-O2/index.html
           ls -la build-dawn-O2

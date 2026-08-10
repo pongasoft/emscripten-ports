@@ -8,7 +8,7 @@ This port allows using ImGui in Emscripten without needing to check out the proj
 
 ```sh
 # Basic Usage (BOTH backend and renderer are required option)
-emcc --use-port=imgui.py:backend=XXX:renderer=YYY ...
+em++ --use-port=imgui.py:backend=XXX:renderer=YYY ...
 ```
 
 > [!NOTE]
